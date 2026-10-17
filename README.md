@@ -43,64 +43,48 @@ Frigate integration and optional Google Coral acceleration.
 
 ## Features
 
-### Licence plate recognition (ANPR / LPR)
-- YOLO plate detector with overlapping-tile search for small or distant plates, then OCR with
-  [fast-plate-ocr](https://github.com/ankandrew/fast-plate-ocr) or PaddleOCR (RapidOCR), chosen
-  automatically or set explicitly.
-- Reads on a dedicated thread per camera, so a slow model elsewhere never makes a fast car miss.
-  Faster polling while something moves in view, slower when the scene is still.
-- **One event per vehicle pass**: plates are tracked across frames, confirmed over several reads (or one
-  confident read), and the **sharpest read** within a configurable window is reported, with the
-  majority-voted text. Parked vehicles are remembered and not reported again.
-- Allowed characters, plate length and an optional regular expression for your region's plate format.
-- **Known plates** and **blacklisted plates**, each with their own MQTT actions. Blacklist CSV import
-  (including the NZ Police stolen-vehicle export layout). A plate cannot be on both lists.
-- **Good / Bad review feedback** that the reader learns from: trusted plates correct near-miss reads,
-  rejected reads are suppressed.
-- Plate banners on every event are coloured **green for known** and **red for blacklisted** plates.
+### 🔍 Detection
 
-### Vehicles and direction of travel
-- Vehicle make, model, generation, year and **colour** from an AutoVision classifier, merged into the
-  plate event.
-- **IN / OUT direction**: draw IN and OUT zones per camera; a vehicle that reaches the OUT zone and then
-  the IN zone is reported **IN**, and the reverse **OUT** (see [Direction of travel](#direction-of-travel)).
-- Direction tracking runs on its own fast thread and can use an **SSD MobileNet detector on a Google
-  Coral** for several samples a second per camera.
+| | Feature | What you get |
+|:-:|---|---|
+| 🚘 | **Licence plate recognition** | YOLO plate detector with overlapping-tile search for small or distant plates, then [fast-plate-ocr](https://github.com/ankandrew/fast-plate-ocr) or PaddleOCR (RapidOCR). Optional regular expression for your region's plate format. |
+| 🎯 | **One event per pass** | Plates are tracked across frames and confirmed over several reads (or one confident read). The **sharpest read** in a configurable window is reported, with the majority-voted text. Parked vehicles are not reported again. |
+| ⚡ | **Fast, independent reading** | Each camera's plates are read on their own thread, faster while something moves and slower when the scene is still, so a slow model elsewhere never makes a fast car miss. |
+| 🚙 | **Vehicle make, model and colour** | Make, model, generation, year and colour from an AutoVision classifier, merged into the plate event. |
+| 🧭 | **Direction of travel (IN / OUT)** | Draw IN and OUT zones per camera. Reaching the OUT zone then the IN zone is **IN**, the reverse is **OUT**. Corner clips and touching zones are handled. |
+| 🙂 | **Face recognition** | YuNet detection and SFace recognition. Known faces from a few training images, unknown faces still recorded, and a face-image search. |
+| 🔥 | **Fire, smoke and flame** | YOLO detector with a sustained-detection lifecycle and cooldowns, plus filters for **sun glare**, white glare and a multi-frame **flicker / motion gate** against false alarms. |
 
-### Behaviour
-- Enter a plate to see **when it arrives and leaves**, and the routines that repeat: "Leaves every weekday
-  at 8:05 am", "Arrives every fortnight on Sunday", with a confidence score, the next expected time,
-  snapshots of the visits and a day-by-hour heatmap.
+### 🧠 Intelligence
 
-### Faces
-- YuNet face detection and SFace recognition. Known faces from a few training images, unknown faces are
-  still recorded, and a **face image search** across stored events.
+| | Feature | What you get |
+|:-:|---|---|
+| 📈 | **Behaviour patterns** | Enter a plate and see when it arrives and leaves: "Leaves every weekday at 8:05 am", "Arrives every fortnight on Sunday", with a confidence, the next expected time, snapshots and a day-by-hour heatmap. |
+| 🟢 | **Known and blacklisted plates** | Lists with their own MQTT actions and CSV import (including the NZ Police stolen-vehicle layout). Event banners turn **green** for known and **red** for blacklisted plates. |
+| 👍 | **Learns from your feedback** | Mark reads Good or Bad. Trusted plates correct near-miss reads and rejected reads are suppressed. |
+| 🔎 | **Search** | By plate, vehicle make, model or colour, time range, event type and camera, or by an uploaded face image. Disabled modules are hidden from the options. |
 
-### Fire, smoke and flame
-- YOLO fire / smoke detector with a sustained-detection event lifecycle and cooldowns.
-- Built-in filters for the usual false positives: **sun glare** (smooth bright regions), neutral white
-  glare, and a multi-frame **flicker / motion gate**.
-- Notifications by email (SMTP), webhook and [ntfy](https://ntfy.sh), each with its own message
-  template and optional snapshot.
+### 🖥️ Web UI
 
-### Web UI
-- Live View over go2rtc (MSE / WebRTC) with an MJPEG fallback, ONVIF **PTZ** controls and full screen.
-- **Events** with camera, label and date filters, show-reviewed, bulk select (right click, Esc to
-  cancel), mark reviewed and delete, and an Events / Search layout that adapts to phones.
-- **Search** by plate, vehicle make, model or colour, time range, event type (plate, face, fire) and
-  camera, or by an uploaded face image. Event types for disabled modules are hidden.
-- **Camera settings**: per-module detect and exclude regions drawn on a live frame, cooldowns and
-  ONVIF, all per camera.
-- **Metrics**: CPU, memory, GPU, disk, network, per-process load, inference speed and Coral usage.
-- **Logs**: filter by area, a raw **Docker** view of the container output, and **export** to a file.
-- Light and dark themes, full-screen dialogs on mobile, login with **roles** (admin, operator, viewer)
-  and optional **MFA** (email or authenticator app).
+| | Feature | What you get |
+|:-:|---|---|
+| 📹 | **Live View** | go2rtc streams (MSE / WebRTC) with an MJPEG fallback, ONVIF **PTZ** controls and full screen. |
+| 🗂️ | **Events** | Camera, label and date filters, show-reviewed, bulk select (right click, Esc to cancel), mark reviewed, delete, and a detail view with snapshot and vehicle data. |
+| 🗺️ | **Camera zones** | Per-module detect and exclude regions, and IN / OUT direction zones, drawn on a live frame. Cooldowns and ONVIF per camera. |
+| 📊 | **Metrics** | CPU, memory, GPU, disk, network, per-process load, inference speed and **Coral usage**. |
+| 📜 | **Logs** | Filter by area, a raw **Docker** view of the container output, and **export** to a text file. |
+| 📱 | **Responsive, themed** | Light and dark themes, and full-screen dialogs and single-column layouts on phones. |
+| 🔐 | **Login, roles and MFA** | Admin, operator and viewer roles with optional email or authenticator-app MFA. |
 
-### Integrations
-- **MQTT**: four topics (events, plates, vehicles, faces) plus per-plate and per-person custom messages.
-- **Frigate**: optionally publish plate and face events to Frigate as manual events, with the plate in
-  Frigate's licence plate field and the rest in the description.
-- **go2rtc** bundled in the compose file.
+### 🔌 Integrations and hardware
+
+| | Feature | What you get |
+|:-:|---|---|
+| 📡 | **MQTT** | Four topics (events, plates, vehicles, faces) plus custom per-plate and per-person messages. |
+| 🎬 | **Frigate** | Optionally publish plate and face events to Frigate as manual events, with the plate in Frigate's licence plate field and the rest in the description. |
+| 🔔 | **Notifications** | Email (SMTP), webhook and [ntfy](https://ntfy.sh) for fire and smoke, with message templates and optional snapshots. |
+| 🌐 | **go2rtc** | Included in the compose file for live streams. |
+| 🧩 | **Google Coral** | Optional Edge TPU acceleration, including a fast SSD detector for direction tracking. CPU, NVIDIA CUDA and Apple Metal for the YOLO models. |
 
 ## Quick start
 
